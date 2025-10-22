@@ -26,10 +26,11 @@ class BaseDistribution(ABC):
 class KDEDistribution(BaseDistribution):
     """Kernel Density Estimation distribution."""
     
-    def __init__(self, bandwidth: str = 'scott', kernel: str = 'gaussian'):
+    def __init__(self, bandwidth: str = 'scott', kernel: str = 'gaussian', random_state: Optional[int] = None):
         self.bandwidth = bandwidth
         self.kernel = kernel
         self.kde_ = None
+        self.random_state = random_state
         
     def fit(self, data: np.ndarray) -> 'KDEDistribution':
         """Fit KDE to the data."""
@@ -46,7 +47,7 @@ class KDEDistribution(BaseDistribution):
         
     def sample(self, n_samples: int) -> np.ndarray:
         """Generate samples from the fitted KDE."""
-        samples = self.kde_.sample(n_samples)
+        samples = self.kde_.sample(n_samples, random_state=self.random_state)
         if self.n_features_ == 1:
             samples = samples.flatten()
         return samples
@@ -55,9 +56,14 @@ class KDEDistribution(BaseDistribution):
 class GaussianDistribution(BaseDistribution):
     """Multivariate Gaussian distribution."""
     
-    def __init__(self):
+    def __init__(self, random_state: Optional[int] = None):
         self.mean_ = None
         self.cov_ = None
+        self.random_state = random_state
+        if random_state is not None:
+            self.rng = np.random.RandomState(random_state)
+        else:
+            self.rng = np.random
         
     def fit(self, data: np.ndarray) -> 'GaussianDistribution':
         """Fit Gaussian distribution to the data."""
@@ -65,10 +71,15 @@ class GaussianDistribution(BaseDistribution):
             data = data.reshape(-1, 1)
             
         self.mean_ = np.mean(data, axis=0)
-        self.cov_ = np.cov(data, rowvar=False)
+        # Use ddof=0 for population covariance (matches np.var behavior)
+        self.cov_ = np.cov(data, rowvar=False, ddof=0)
+        
+        # Handle 1D case where cov_ is a scalar
+        if self.cov_.ndim == 0:
+            self.cov_ = self.cov_.reshape(1, 1)
         
         # Handle singular covariance matrices
-        if np.linalg.det(self.cov_) == 0:
+        if self.cov_.shape[0] > 0 and np.linalg.det(self.cov_) == 0:
             self.cov_ += np.eye(self.cov_.shape[0]) * 1e-6
             
         self.n_features_ = data.shape[1]
@@ -77,13 +88,13 @@ class GaussianDistribution(BaseDistribution):
     def sample(self, n_samples: int) -> np.ndarray:
         """Generate samples from the fitted Gaussian."""
         if self.n_features_ == 1:
-            samples = np.random.normal(
+            samples = self.rng.normal(
                 self.mean_[0], 
                 np.sqrt(self.cov_[0, 0]), 
                 n_samples
             )
         else:
-            samples = np.random.multivariate_normal(
+            samples = self.rng.multivariate_normal(
                 self.mean_, 
                 self.cov_, 
                 n_samples
@@ -94,8 +105,13 @@ class GaussianDistribution(BaseDistribution):
 class UniformDistribution(BaseDistribution):
     """Uniform distribution within feature bounds."""
     
-    def __init__(self):
+    def __init__(self, random_state: Optional[int] = None):
         self.bounds_ = None
+        self.random_state = random_state
+        if random_state is not None:
+            self.rng = np.random.RandomState(random_state)
+        else:
+            self.rng = np.random
         
     def fit(self, data: np.ndarray) -> 'UniformDistribution':
         """Fit uniform distribution to data bounds."""
@@ -112,7 +128,7 @@ class UniformDistribution(BaseDistribution):
         
     def sample(self, n_samples: int) -> np.ndarray:
         """Generate uniform samples within bounds."""
-        samples = np.random.uniform(
+        samples = self.rng.uniform(
             self.bounds_[:, 0],
             self.bounds_[:, 1],
             size=(n_samples, self.n_features_)
@@ -121,6 +137,45 @@ class UniformDistribution(BaseDistribution):
         if self.n_features_ == 1:
             samples = samples.flatten()
             
+        return samples
+
+
+class CompositeDistribution(BaseDistribution):
+    """
+    A composite distribution that samples from multiple independent distributions.
+    """
+    def __init__(self, distributions: Dict[int, BaseDistribution]):
+        self.distributions = distributions
+
+    def __len__(self) -> int:
+        """Return the number of features (distributions)."""
+        return len(self.distributions)
+    
+    def __getitem__(self, key: int) -> BaseDistribution:
+        """Allow subscript access to individual distributions."""
+        return self.distributions[key]
+    
+    def __contains__(self, key: int) -> bool:
+        """Check if a feature index has a distribution."""
+        return key in self.distributions
+    
+    def __iter__(self):
+        """Iterate over feature indices."""
+        return iter(self.distributions)
+
+    def fit(self, data: np.ndarray) -> 'CompositeDistribution':
+        """This distribution is already fitted."""
+        return self
+
+    def sample(self, n_samples: int) -> np.ndarray:
+        """Generate samples from the composite distribution."""
+        n_features = len(self.distributions)
+        samples = np.zeros((n_samples, n_features))
+
+        for i, distribution in self.distributions.items():
+            feature_samples = distribution.sample(n_samples)
+            samples[:, i] = feature_samples
+
         return samples
 
 
@@ -151,9 +206,7 @@ class DistributionFitter:
         if random_state is not None:
             np.random.seed(random_state)
             
-        self.distributions_ = {}
-        
-    def fit(self, data: np.ndarray) -> Dict[int, BaseDistribution]:
+    def fit(self, data: np.ndarray) -> CompositeDistribution:
         """
         Fit distributions to each feature independently.
         
@@ -164,8 +217,8 @@ class DistributionFitter:
             
         Returns
         -------
-        distributions : dict
-            Dictionary mapping feature index to fitted distribution
+        distributions : CompositeDistribution
+            A composite distribution containing fitted distributions for each feature.
         """
         if data.ndim == 1:
             data = data.reshape(-1, 1)
@@ -176,25 +229,26 @@ class DistributionFitter:
         for i in range(n_features):
             feature_data = data[:, i]
             
-            # Create distribution instance
+            # Create distribution instance with random_state
             if self.method == 'kde':
-                dist = KDEDistribution(**self.kwargs)
+                dist = KDEDistribution(random_state=self.random_state, **self.kwargs)
             elif self.method == 'gaussian':
-                dist = GaussianDistribution(**self.kwargs)
+                dist = GaussianDistribution(random_state=self.random_state, **self.kwargs)
             elif self.method == 'uniform':
-                dist = UniformDistribution(**self.kwargs)
+                dist = UniformDistribution(random_state=self.random_state, **self.kwargs)
             else:
                 raise ValueError(f"Unknown method: {self.method}")
                 
             # Fit to feature data
             distributions[i] = dist.fit(feature_data)
-            
-        self.distributions_ = distributions
-        return distributions
         
+        # Store fitted distributions for sample() method
+        self.fitted_distributions_ = CompositeDistribution(distributions)
+        return self.fitted_distributions_
+    
     def sample(self, n_samples: int) -> np.ndarray:
         """
-        Generate samples from fitted distributions.
+        Generate samples from the fitted distributions.
         
         Parameters
         ----------
@@ -205,18 +259,16 @@ class DistributionFitter:
         -------
         samples : array-like of shape (n_samples, n_features)
             Generated samples
+            
+        Raises
+        ------
+        ValueError
+            If called before fit()
         """
-        if not self.distributions_:
-            raise ValueError("Must fit distributions before sampling")
-            
-        n_features = len(self.distributions_)
-        samples = np.zeros((n_samples, n_features))
+        if not hasattr(self, 'fitted_distributions_'):
+            raise ValueError("Must call fit() before sample()")
         
-        for i, distribution in self.distributions_.items():
-            feature_samples = distribution.sample(n_samples)
-            samples[:, i] = feature_samples
-            
-        return samples
+        return self.fitted_distributions_.sample(n_samples)
         
     def fit_sample(self, data: np.ndarray, n_samples: int) -> np.ndarray:
         """
@@ -234,5 +286,6 @@ class DistributionFitter:
         samples : array-like of shape (n_samples, n_features)
             Generated samples
         """
-        self.fit(data)
-        return self.sample(n_samples)
+        composite_dist = self.fit(data)
+        self.fitted_distributions_ = composite_dist
+        return composite_dist.sample(n_samples)

@@ -1,0 +1,18 @@
+# DistAwareAug Manifest
+
+include README.md
+include LICENSE
+include CHANGELOG.md
+include CONTRIBUTING.md
+include pyproject.toml
+include setup.py
+include requirements.txt
+
+recursive-include distawareaug *.py
+recursive-include distawareaug py.typed
+recursive-include tests *.py
+recursive-include examples *.ipynb *.py
+
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude * .DS_Store

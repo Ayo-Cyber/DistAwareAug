@@ -5,7 +5,7 @@ Tests for the DistAwareAugmentor class.
 import unittest
 import numpy as np
 from sklearn.datasets import make_classification
-from sklearn.utils.testing import assert_array_equal
+from numpy.testing import assert_array_equal
 import sys
 import os
 

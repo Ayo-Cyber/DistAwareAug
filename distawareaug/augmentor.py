@@ -96,8 +96,7 @@ class DistAwareAugmentor(BaseEstimator, TransformerMixin):
                 method=self.distribution_method,
                 random_state=self.random_state
             )
-            class_fitter.fit(class_data)
-            self.fitted_distributions_[class_label] = class_fitter
+            self.fitted_distributions_[class_label] = class_fitter.fit(class_data)
             
         return self
         
@@ -183,7 +182,7 @@ class DistAwareAugmentor(BaseEstimator, TransformerMixin):
         class_data = self.X_[class_mask]
         
         # Get the fitted distribution fitter for this class
-        distribution_fitter = self.fitted_distributions_[class_label]
+        distributions = self.fitted_distributions_[class_label]
         
         synthetic_samples = []
         attempts = 0
@@ -191,7 +190,9 @@ class DistAwareAugmentor(BaseEstimator, TransformerMixin):
         
         while len(synthetic_samples) < n_samples and attempts < max_attempts:
             # Sample from the fitted distribution
-            candidate = distribution_fitter.sample(1)[0]
+            candidate = np.zeros(len(distributions))
+            for i, dist in distributions.distributions.items():
+                candidate[i] = dist.sample(1)[0]
             
             # Clip to feature ranges
             candidate = clip_to_range(candidate, class_data)
@@ -204,7 +205,9 @@ class DistAwareAugmentor(BaseEstimator, TransformerMixin):
             
         # If we couldn't generate enough diverse samples, fill with random samples
         while len(synthetic_samples) < n_samples:
-            candidate = distribution_fitter.sample(1)[0]
+            candidate = np.zeros(len(distributions))
+            for i, dist in distributions.distributions.items():
+                candidate[i] = dist.sample(1)[0]
             candidate = clip_to_range(candidate, class_data)
             synthetic_samples.append(candidate)
             

@@ -8,12 +8,13 @@ distribution of minority class features while ensuring sample diversity.
 from .augmentor import DistAwareAugmentor
 from .distribution import DistributionFitter
 from .distance import DistanceMetrics
-from .utils import validate_data, clip_to_range
+from .utils import validate_data, clip_to_range, check_class_balance
 from .config import DEFAULT_CONFIG
 
 __version__ = "0.1.0"
-__author__ = "Your Name"
-__email__ = "your.email@example.com"
+__author__ = "Atunrase Ayo"
+__email__ = "atunraseayomide@gmail.com" 
+__license__ = "MIT"
 
 __all__ = [
     "DistAwareAugmentor",
@@ -21,5 +22,6 @@ __all__ = [
     "DistanceMetrics",
     "validate_data",
     "clip_to_range",
-    "DEFAULT_CONFIG"
+    "check_class_balance",
+    "DEFAULT_CONFIG",
 ]
