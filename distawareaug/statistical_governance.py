@@ -3,12 +3,10 @@ Enhanced distribution fitting that preserves correlation structure
 and provides statistical governance for synthetic data generation.
 """
 
+from typing import Any, Dict, Optional
+
 import numpy as np
-from typing import Optional, Union, Dict, Any, Tuple
-from sklearn.neighbors import KernelDensity
 from scipy import stats
-from abc import ABC, abstractmethod
-import warnings
 
 # Add this enhanced version to address your requirements
 

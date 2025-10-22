@@ -3,14 +3,10 @@ Tests for distance metrics and diversity checking functionality.
 """
 
 import unittest
+
 import numpy as np
 from sklearn.datasets import make_blobs
 from sklearn.metrics.pairwise import euclidean_distances, manhattan_distances
-import sys
-import os
-
-# Add parent directory to path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from distawareaug.distance import DistanceMetrics
 

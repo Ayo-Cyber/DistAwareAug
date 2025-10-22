@@ -8,10 +8,11 @@ This implements the complete framework described:
 4. Provide tunable controls for generation bias
 """
 
-import numpy as np
-from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
 
 
 class GenerationBias(Enum):
@@ -211,7 +212,7 @@ class StatisticallyGovernedAugmentor:
                         "ks_statistic": ks_stat,
                     }
 
-            except Exception as e:
+            except Exception:
                 continue
 
         # Determine feature type

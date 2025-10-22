@@ -6,10 +6,10 @@ distribution of minority class features while ensuring sample diversity.
 """
 
 from .augmentor import DistAwareAugmentor
-from .distribution import DistributionFitter
-from .distance import DistanceMetrics
-from .utils import validate_data, clip_to_range, check_class_balance
 from .config import DEFAULT_CONFIG
+from .distance import DistanceMetrics
+from .distribution import DistributionFitter
+from .utils import check_class_balance, clip_to_range, validate_data
 
 __version__ = "0.1.0"
 __author__ = "Atunrase Ayo"

@@ -3,18 +3,13 @@ Tests for distribution fitting and sampling functionality.
 """
 
 import unittest
-import numpy as np
-from sklearn.datasets import make_blobs
-import sys
-import os
 
-# Add parent directory to path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import numpy as np
 
 from distawareaug.distribution import (
     DistributionFitter,
-    KDEDistribution,
     GaussianDistribution,
+    KDEDistribution,
     UniformDistribution,
 )
 
@@ -247,7 +242,7 @@ class TestDistributionQuality(unittest.TestCase):
         uniform.fit(self.uniform_data)
 
         # Check bounds
-        true_min, true_max = 0, 20
+        # true_min, true_max = 0, 20  # Not used in assertions
         fitted_min = uniform.bounds_[0, 0]
         fitted_max = uniform.bounds_[0, 1]
 

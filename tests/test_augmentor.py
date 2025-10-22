@@ -3,17 +3,12 @@ Tests for the DistAwareAugmentor class.
 """
 
 import unittest
-import numpy as np
-from sklearn.datasets import make_classification
-from numpy.testing import assert_array_equal
-import sys
-import os
 
-# Add parent directory to path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import numpy as np
+from numpy.testing import assert_array_equal
+from sklearn.datasets import make_classification
 
 from distawareaug import DistAwareAugmentor
-from distawareaug.config import DEFAULT_CONFIG
 
 
 class TestDistAwareAugmentor(unittest.TestCase):
@@ -203,8 +198,6 @@ class TestAugmentorIntegration(unittest.TestCase):
 
     def test_sklearn_compatibility(self):
         """Test compatibility with sklearn pipeline and cross-validation."""
-        from sklearn.pipeline import Pipeline
-        from sklearn.model_selection import cross_val_score
         from sklearn.ensemble import RandomForestClassifier
 
         # Create dataset

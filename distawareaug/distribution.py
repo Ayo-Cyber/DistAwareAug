@@ -2,11 +2,11 @@
 Distribution fitting and sampling for feature distributions.
 """
 
-import numpy as np
-from typing import Optional, Union, Dict, Any
-from sklearn.neighbors import KernelDensity
-from scipy import stats
 from abc import ABC, abstractmethod
+from typing import Dict, Optional
+
+import numpy as np
+from sklearn.neighbors import KernelDensity
 
 
 class BaseDistribution(ABC):
@@ -15,12 +15,10 @@ class BaseDistribution(ABC):
     @abstractmethod
     def fit(self, data: np.ndarray) -> "BaseDistribution":
         """Fit the distribution to data."""
-        pass
 
     @abstractmethod
     def sample(self, n_samples: int) -> np.ndarray:
         """Generate samples from the fitted distribution."""
-        pass
 
 
 class KDEDistribution(BaseDistribution):

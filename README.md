@@ -314,7 +314,22 @@ This script will:
 4. ✅ Run all tests with pytest
 5. ✅ Generate coverage report
 
-Fix any issues before committing!
+### Auto-Fix Linting Issues
+
+If you have linting errors (unused imports, variables, etc.):
+
+```bash
+# Automatically remove unused imports and variables
+python fix_linting.py
+```
+
+This will:
+- Remove unused imports
+- Remove unused variables
+- Format code with Black
+- Sort imports with isort
+
+Then run `sh run_ci_tests.sh` again to verify!
 
 ---
 
@@ -349,20 +364,22 @@ pre-commit install
 
 2. **Make your changes** and ensure code quality:
    ```bash
-   # Format code
+   # Auto-fix common issues
+   python fix_linting.py
+   
+   # Or manually format
    black distawareaug tests
-   
-   # Sort imports
    isort distawareaug tests
-   
-   # Check linting
    flake8 distawareaug tests
-   
-   # Type checking (optional)
-   mypy distawareaug
    ```
 
-3. **Write/update tests**:
+3. **Run CI checks locally**:
+   ```bash
+   # Run all checks (formatting, linting, tests)
+   sh run_ci_tests.sh
+   ```
+
+4. **Write/update tests**:
    ```bash
    # Run tests
    pytest -v
@@ -371,12 +388,12 @@ pre-commit install
    pytest --cov=distawareaug --cov-report=term-missing
    ```
 
-4. **Update documentation** if needed:
+5. **Update documentation** if needed:
    - Update README.md for user-facing changes
-   - Update docstrings for API changes
+   - Update docstrings for library reference changes
    - Add examples for new features
 
-5. **Commit your changes**:
+6. **Commit your changes**:
    ```bash
    git add .
    git commit -m "feat: add your feature description"
@@ -396,6 +413,18 @@ pre-commit install
    git push origin feature/your-feature-name
    ```
    Then open a PR on GitHub with a clear description.
+
+**Pro tip**: Use `make` commands for common tasks:
+```bash
+make format      # Format code with black and isort
+make lint        # Check linting
+make test        # Run tests
+make test-cov    # Run tests with coverage
+make check       # Run all checks
+make clean       # Clean build artifacts
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ### Code Style Guidelines
 

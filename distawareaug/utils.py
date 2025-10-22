@@ -2,9 +2,10 @@
 Utility functions for data validation, preprocessing, and range clipping.
 """
 
-import numpy as np
 import warnings
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
+
+import numpy as np
 from sklearn.utils import check_array
 
 

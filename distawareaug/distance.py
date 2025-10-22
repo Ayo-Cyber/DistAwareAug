@@ -2,11 +2,11 @@
 Distance metrics and diversity checking for synthetic sample generation.
 """
 
+from typing import Callable, Optional, Union
+
 import numpy as np
-from typing import Union, Optional, Callable
-from sklearn.metrics.pairwise import euclidean_distances, manhattan_distances, cosine_distances
 from sklearn.metrics import pairwise_distances
-from scipy.spatial.distance import minkowski
+from sklearn.metrics.pairwise import cosine_distances, euclidean_distances, manhattan_distances
 
 
 class DistanceMetrics:

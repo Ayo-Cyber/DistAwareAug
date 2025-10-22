@@ -2,15 +2,15 @@
 Main oversampling logic for distribution-aware augmentation.
 """
 
+from typing import Optional, Tuple
+
 import numpy as np
-from typing import Optional, Dict, Any, Tuple
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils import check_X_y
 
-from .distribution import DistributionFitter
 from .distance import DistanceMetrics
-from .utils import validate_data, clip_to_range
-from .config import DEFAULT_CONFIG
+from .distribution import DistributionFitter
+from .utils import clip_to_range, validate_data
 
 
 class DistAwareAugmentor(BaseEstimator, TransformerMixin):
