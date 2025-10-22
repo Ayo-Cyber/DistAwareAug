@@ -1,0 +1,36 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, beta1 ]
+  pull_request:
+    branches: [ main, beta1 ]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install black isort flake8
+    
+    - name: Check formatting with Black
+      run: |
+        black --check distawareaug tests --line-length=100
+    
+    - name: Check import sorting with isort
+      run: |
+        isort --check-only distawareaug tests --profile black
+    
+    - name: Lint with flake8
+      run: |
+        flake8 distawareaug tests --max-line-length=100
