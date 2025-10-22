@@ -298,6 +298,24 @@ def test_my_feature():
     assert len(np.unique(y_resampled)) == len(np.unique(y))
 ```
 
+### Run CI Tests Locally
+
+Before pushing, run the same checks that GitHub Actions will run:
+
+```bash
+# Run all CI checks locally (formatting, linting, tests)
+sh run_ci_tests.sh
+```
+
+This script will:
+1. ✅ Check code formatting with Black
+2. ✅ Check import sorting with isort
+3. ✅ Run linting with flake8
+4. ✅ Run all tests with pytest
+5. ✅ Generate coverage report
+
+Fix any issues before committing!
+
 ---
 
 ## 🤝 Contributing
