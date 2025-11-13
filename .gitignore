@@ -3,6 +3,14 @@ __pycache__/
 *.py[cod]
 *$py.class
 .qodo
+venv/
+.env
+
+# Development scripts
+dev_scripts/
+*.png
+*.csv
+benchmark_results.*
 
 # C extensions
 *.so

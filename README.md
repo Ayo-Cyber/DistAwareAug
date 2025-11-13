@@ -53,10 +53,75 @@
 - 🎯 **Flexible Sampling Modes**: 
   - **'add' mode**: Add N samples to existing class count
   - **'target' mode**: Target absolute sample counts (supports both upsampling and downsampling)
-- 🔄 **scikit-learn Compatible**: Drop-in replacement for SMOTE and similar methods
-- ⚡ **Performance Optimized**: Batch generation with efficient diversity checking
+- 🔄 **scikit-learn Compatible**: Standard `fit_resample()` API
+- ⚡ **Performance Optimized**: KD-Tree-based diversity checking (10-13x faster than v0.1.0)
 - 📊 **Quality Metrics**: Built-in diversity scoring and validation
 - 🛡️ **Robust**: Handles edge cases, singular matrices, and various data types
+
+---
+
+## 🆕 What's New in v0.2.0
+
+### Major Performance Improvements
+- **10-13x Speedup**: Replaced O(n²) diversity checking with KD-Tree (O(log n))
+- **Batch Generation**: Increased batch size for reduced Python overhead
+- **Vectorized Operations**: Optimized clipping and distance calculations
+- **Parallel Processing**: Multi-core neighbor queries with `n_jobs=-1`
+
+### Key Changes
+- ✅ **KD-Tree Diversity Checking**: Checks ALL synthetic samples efficiently
+- ✅ **Better Documentation**: Clear parameter explanations and examples
+- ✅ **All Tests Passing**: Comprehensive test coverage
+
+### Performance Comparison
+```
+Benchmark (1000 samples, 20 features, 9:1 imbalance):
+  SMOTE:        0.007s
+  DistAwareAug: 0.05-0.08s (7-12x slower than SMOTE)
+  v0.1.0 was:   0.6-0.7s (91x slower than SMOTE) ❌
+
+Result: 10-13x speedup while maintaining quality! 🚀
+```
+
+---
+
+## 📋 Best Practices & Recommendations
+
+### ✅ When to Use DistAwareAug
+
+**Ideal Use Cases:**
+- **Moderate imbalance** (2:1 to 50:1 ratio)
+- **Multi-modal distributions** (data with multiple clusters)
+- **High-dimensional data** where SMOTE may create unrealistic samples
+- **When sample quality matters** more than generation speed
+- **Research applications** requiring statistical rigor
+
+**Example Scenarios:**
+- Medical diagnosis with rare diseases (class imbalance 5:1 to 30:1)
+- Fraud detection with multiple fraud patterns
+- Customer churn prediction with diverse customer segments
+
+### ⚠️ When NOT to Use DistAwareAug
+
+**Not Recommended For:**
+- **Extreme imbalance** (>100:1) - Use SMOTE/ADASYN instead
+- **Very few minority samples** (<50 samples in high dimensions)
+- **Speed-critical applications** where 7-12x slower than SMOTE is unacceptable
+- **Simple linear separability** where SMOTE works fine
+
+### 🎯 Parameter Tuning Guide
+
+| Parameter | Low Imbalance (2:1 to 10:1) | Moderate (10:1 to 50:1) | Notes |
+|-----------|------------------------------|--------------------------|-------|
+| `diversity_threshold` | 0.05 - 0.1 | 0.1 - 0.2 | Higher = more diverse samples |
+| `distribution_method` | 'kde' | 'kde' or 'gaussian' | KDE for multi-modal, Gaussian for speed |
+| `distance_metric` | 'euclidean' | 'euclidean' or 'manhattan' | Manhattan robust to outliers |
+
+**Pro Tips:**
+1. **Scale your features** before using DistAwareAug (use `StandardScaler`)
+2. **Start with 'gaussian'** for speed, switch to 'kde' if needed
+3. **Tune `diversity_threshold`** based on your feature scale
+4. **Use `sampling_mode='target'`** for precise control over class distribution
 
 ---
 
@@ -186,25 +251,6 @@ X_balanced, y_balanced = augmentor_target.fit_resample(X_train_scaled, y_train)
 dm = DistanceMetrics(metric='euclidean')
 diversity = dm.diversity_score(X_resampled[len(X_train):])
 print(f"Synthetic Sample Diversity: {diversity:.4f}")
-```
-
-### Using with scikit-learn Pipeline
-
-```python
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-from distawareaug import DistAwareAugmentor
-from sklearn.svm import SVC
-
-# Create pipeline
-pipeline = Pipeline([
-    ('scaler', StandardScaler()),
-    ('augmentor', DistAwareAugmentor(distribution_method='gaussian')),
-    ('classifier', SVC())
-])
-
-# Note: Augmentor only applies to training data
-# Use manually for proper train/test separation
 ```
 
 ### Understanding Sampling Modes

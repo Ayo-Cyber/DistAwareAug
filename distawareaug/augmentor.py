@@ -5,17 +5,15 @@ Main oversampling logic for distribution-aware augmentation.
 from typing import Optional, Tuple
 
 import numpy as np
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.metrics import pairwise_distances
+from sklearn.base import BaseEstimator
 from sklearn.neighbors import NearestNeighbors
 from sklearn.utils import check_X_y
 
-from .distance import DistanceMetrics
 from .distribution import DistributionFitter
 from .utils import validate_data
 
 
-class DistAwareAugmentor(BaseEstimator, TransformerMixin):
+class DistAwareAugmentor(BaseEstimator):
     """
     Distribution-Aware Data Augmentation for imbalanced datasets.
 
@@ -66,7 +64,6 @@ class DistAwareAugmentor(BaseEstimator, TransformerMixin):
         self.distribution_fitter = DistributionFitter(
             method=distribution_method, random_state=random_state
         )
-        self.distance_metrics = DistanceMetrics(metric=distance_metric)
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "DistAwareAugmentor":
         """
@@ -330,29 +327,26 @@ class DistAwareAugmentor(BaseEstimator, TransformerMixin):
         if len(valid_candidates) == 0:
             return diverse
 
-        # If synthetic samples exist, check diversity against a subsample
+        # If synthetic samples exist, use KD-Tree for efficient checking
         if synthetic_samples:
             synthetic_array = np.array(synthetic_samples)
 
-            # PERFORMANCE FIX: Only check against a random subsample of synthetic samples
-            # This prevents O(n²) growth as synthetic_samples accumulates
-            max_check_size = 200  # Check against at most 200 synthetic samples
-
-            if len(synthetic_array) > max_check_size:
-                # Randomly subsample synthetic samples for diversity check
-                indices = self._rng.choice(len(synthetic_array), size=max_check_size, replace=False)
-                synthetic_check = synthetic_array[indices]
-            else:
-                synthetic_check = synthetic_array
-
-            # Compute minimal distance from each valid candidate to synthetic subsample
-            dists = pairwise_distances(
-                valid_candidates, synthetic_check, metric=self.distance_metric
+            # OPTIMIZATION: Use KD-Tree/Ball-Tree for O(log n) lookups
+            # This checks ALL synthetic samples efficiently (faster than random sampling)
+            # Let sklearn auto-select the best algorithm for the given metric
+            nn_synthetic = NearestNeighbors(
+                n_neighbors=1,
+                metric=self.distance_metric,
+                n_jobs=-1,
             )
-            min_dists = dists.min(axis=1)
+            nn_synthetic.fit(synthetic_array)
+
+            # Find distance to nearest synthetic sample for each candidate
+            distances_to_synthetic, _ = nn_synthetic.kneighbors(valid_candidates)
+            distances_to_synthetic = distances_to_synthetic.flatten()
 
             # Filter candidates that are sufficiently far from synthetic samples
-            final_mask = min_dists >= self.diversity_threshold
+            final_mask = distances_to_synthetic >= self.diversity_threshold
             diverse = valid_candidates[final_mask].tolist()
         else:
             diverse = valid_candidates.tolist()
