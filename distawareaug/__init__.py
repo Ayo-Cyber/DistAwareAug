@@ -11,7 +11,7 @@ from .distance import DistanceMetrics
 from .distribution import DistributionFitter
 from .utils import check_class_balance, clip_to_range, validate_data
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Atunrase Ayo"
 __email__ = "atunraseayomide@gmail.com"
 __license__ = "MIT"
